@@ -1,55 +1,55 @@
-int pinData  = 2;
-int pinLatch = 3;
-int pinClock = 4;
-char input;
-#define TIEMPO 200
+const int SER = 2;
+const int RCLK = 4;
+const int SRCLK = 5 ;
 
-void ledWrite(int RLed, int GLed, int BLed, int YLed, int KLed, int MLed, int HLed, int WLed){
-   shiftOut(pinData, pinClock, LSBFIRST, BLed);
-   shiftOut(pinData, pinClock, LSBFIRST, GLed);
-   shiftOut(pinData, pinClock, LSBFIRST, RLed);
-   shiftOut(pinData, pinClock, LSBFIRST, YLed);
-   shiftOut(pinData, pinClock, LSBFIRST, KLed);
-   shiftOut(pinData, pinClock, LSBFIRST, MLed);
-   shiftOut(pinData, pinClock, LSBFIRST, HLed);
-   shiftOut(pinData, pinClock, LSBFIRST, WLed);
-   digitalWrite(pinLatch, HIGH);
-   digitalWrite(pinLatch, LOW);
+//unsign int puertos[3] = {2, 4, 5}
+// 8 leds = 8 bits -> 1 Byte
+
+//int matrizLeds[8][8] = {}; 
+
+void setup()
+{
+  // {Paso 1} Configuración de puertos digitales como salida
+  pinMode( SER, OUTPUT);
+  pinMode( RCLK, OUTPUT);
+  pinMode( SRCLK, OUTPUT);
+  
+  digitalWrite( RCLK, 0);
+  digitalWrite( SER, 0);
+  digitalWrite( SRCLK, 0);
+  // -----------------------------------
+  
+  // Envío de datos al CI(registro) 74HC595
+  // {Paso 2} Llevar el dato al puerto serial del 74HC595 -> 0/1
+  
+  // verificacion(); 
+  
+  
+ 
 }
 
-void setup(){
-   pinMode(pinData, OUTPUT);
-   pinMode(pinLatch, OUTPUT);
-   pinMode(pinClock, OUTPUT);
-   Serial.begin(9600);
-}
+void loop(){  
+  
+} 
 
-void loop(){
-   ledWrite(128,128,128,128,0,128,128,0);
-   ledWrite(64,64,64,64,0,64,64,64);
-   ledWrite(32,32,32,32,0,0,32,32);
-   ledWrite(16,16,0,16,0,0,16,16);
-   ledWrite(8,8,0,8,0,0,8,8);
-   ledWrite(4,4,0,4,4,4,4,4);
-   ledWrite(2,2,0,2,2,2,2,2);
-   ledWrite(1,1,0,0,1,1,1,0);
-}
 
 void verificacion(){
-   ledWrite(128,128,128,128,128,128,128,128);
-   ledWrite(64,64,64,64,64,64,64,64);
-   ledWrite(32,32,32,32,32,32,32,32);
-   ledWrite(16,16,16,16,16,16,16,16);
-   ledWrite(8,8,8,8,8,8,8,8);
-   ledWrite(4,4,4,4,4,4,4,4);
-   ledWrite(2,2,2,2,2,2,2,2);
-   ledWrite(1,1,1,1,1,1,1,1);
-}
-
-void imagen(){
-  if (Serial.available()>0){
-    input=Serial.read();
-
-    Serial.println(input);
+  for(int i = 1; i <= 16; i++){
+  	// Envío de bit
+    digitalWrite( SER, 1);
+    
+    // Señal de reloj de ENTRADA
+  	digitalWrite( SRCLK, 0);
+  	digitalWrite( SRCLK, 1);
+  	digitalWrite( SRCLK, 0);
   }
+  
+  // Señal de reloj de SALIDA
+  digitalWrite( RCLK, 0);
+  digitalWrite( RCLK, 1);
+  digitalWrite( RCLK, 0); 
 }
+
+
+
+
