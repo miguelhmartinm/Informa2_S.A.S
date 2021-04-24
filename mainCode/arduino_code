@@ -1,0 +1,226 @@
+//#include <iostream>
+
+//using namespace std;
+
+#define MAXROW (unsigned char)8
+#define MAXCOLUMN (unsigned char)8
+
+const int SER = 2;
+const int RCLK = 4;
+const int SRCLK = 5 ;
+
+unsigned int digitalSignal[3] = {0, 1, 0};
+unsigned int puertos[3] = {SER, RCLK, SRCLK};
+
+int matrizLeds[MAXROW][MAXCOLUMN];
+
+int patron[MAXROW][MAXCOLUMN];
+
+
+//int charA[]={65,126,255,195,255,255,195,195,195}; //A
+//int charA[]={73,255,255,24,24,24,24,255,255}; //I
+//int charA[] = {69,255, 255, 192, 254, 254, 192, 255, 255}; //E
+//int charA[] = {72,195, 195, 195, 255, 255, 195, 195, 195};//H
+
+				   // { {ASCII, byte, byte, ..., byte}, {},{}, {}}
+int characters[][9] = { {65, 126,255,195,255,255,195,195,195},        // A
+                        {73, 255,255,24,24,24,24,255,255},            // I
+                        {69, 255, 255, 192, 254, 254, 192, 255, 255}, // E
+                        {74, 3, 3, 3, 3, 3, 195, 255, 126}            // J
+                      };
+
+// **************** FUNCTIONS PROTOTYPE ***************
+
+int verificacion(int [][MAXCOLUMN]);
+int imagen(int [][MAXCOLUMN],int [][MAXCOLUMN]);
+int eraser(int [][MAXCOLUMN]);
+
+int decimalToBinary(int []);
+
+void dataSER(int );
+void signalSRCLK();
+void signalRCLK();
+
+
+// *****************************************************
+
+
+int main()
+{ 
+   init();
+   Serial.begin(9600);
+   char caracter;
+ 	//verificacion(matrizLeds);    
+
+   //Inicialización de los puertos digitales
+   for(unsigned int i = 0 ; i < 3 ; i++ ){
+   		pinMode( puertos[i] , OUTPUT );
+   		digitalWrite( puertos[i] , 0 );
+   }
+      
+  while(1){
+    //verificacion(matrizLeds);
+    if(Serial.available() > 0){
+      
+      caracter = Serial.read();
+      Serial.print("Ingrese patron: ");
+      Serial.print(caracter);
+      Serial.print('\n');
+      
+      eraser(matrizLeds);
+    
+      /* Busca si el caracter ingresado coincide con la 1ra posición de
+       * cada elemento, correspondiente al código ASCCI
+       */        
+    for( int i = 0; i < 4 ; i++ ){
+        if( caracter == **(characters+i) ){
+                        
+            // Envía como parámetro el arreglo que esté en la posición actual
+            decimalToBinary( characters[i]);
+        }
+    }      
+     // verificacion(matrizLeds);
+  
+      imagen(patron, matrizLeds);
+    }
+  }
+    return 0;
+}
+
+// *****************************************************
+// **************** FUNCTIONS DEFINITION ***************
+// *****************************************************
+
+/* Toma el array de la matriz characterssegún el código ASCCI que coincida con el 
+ caracter ingresado y convierte cada valor decimal en binario
+ para ser guardado en la matriz patron que se pasa a la matriz
+ led.
+ *
+ */
+
+int decimalToBinary( int arrayPatron[] ){
+
+    int bit, decimal=0;
+
+    for(int j = 0; j < 8; j++){
+        bool bitDivide = true;
+        int k=8;
+        decimal =  arrayPatron[j+1];
+        
+      /* Toma la parte entera de cada # decimal, luego toma el módulo
+       * y lo guarda como un bit en matriz patron
+       */
+        while(bitDivide){
+          k--;        
+          bit = decimal % 2;          
+          patron[j][k] = bit;
+          
+          
+          if( decimal / 2 == 0 ){
+            bitDivide = false;
+          }
+          decimal = decimal / 2;
+        }
+		
+      /* Despues de guardar cada bit en la matriz patron
+       * completa con ceros el arreglo, si es necesario, hasta
+       * tener un arreglo con 8 elementos, 8 bits.
+      */
+        for(int m=k-1; m > 0; m-- ){
+          patron[j][m] = 0;          
+        }
+    }
+
+    return 0;
+}
+
+/* TODO:
+*
+Pone los leds en LOW antes de mostrar el siguiente patrón.
+*/
+ 
+int eraser(int matriz[][8]){
+
+    // Rellenado de toda la matríz con valores igual a 1
+    for(int row = 0; row < MAXROW ; row++){
+        for(int column = 0; column < MAXCOLUMN ; column++){
+            matriz[row][column] = 0;           
+            dataSER(matriz[row][column]);
+            signalSRCLK();
+            signalRCLK();
+        }
+        //cout << endl;
+    }
+
+    //dataSER(matriz[]);
+
+
+    return 0;
+}
+
+
+// Enciende todos los leds verificando que funcionen 
+ 
+int verificacion(int matriz[][8]){
+
+    // Rellenado de toda la matríz con valores igual a 1
+    for(int row = 0; row < MAXROW ; row++){
+        for(int column = 0; column < MAXCOLUMN ; column++){
+            matriz[row][column] = 1;
+            //cout << " " << matriz[row][column];
+            dataSER(matriz[row][column]);
+            signalSRCLK();
+            signalRCLK();
+        }
+        //cout << endl;
+    }
+    return 0;
+}
+
+//******************************************************************
+
+// Muestra en la matriz de leds el patrón ingresado
+int imagen(int patron[][8], int matriz[][8]){
+    
+    for(int row = 0; row < MAXROW ; row++){
+      for(int column = 0; column < MAXCOLUMN ; column++){
+        matriz[row][column] = patron[row][column];
+       // cout << " " << matriz[row][column];
+        dataSER(matriz[row][column]);
+        signalSRCLK();
+        signalRCLK();
+      }
+      //cout << endl;
+    }
+    return 0;
+}
+
+
+//******************************************************************
+void dataSER(int bit){
+
+    // Señal de dato SERIAL
+    digitalWrite( SER, bit);
+}
+
+//******************************************************************
+void signalSRCLK(){
+
+    // Reloj del registro de ENTRADA
+    for(int bit=0; bit < 3; bit++){
+        digitalWrite( SRCLK, digitalSignal[bit]);
+    }
+
+}
+
+//******************************************************************
+void signalRCLK(){
+
+    // Reloj del registro de SALIDA
+    for(int bit=0; bit < 3; bit++){
+        digitalWrite( RCLK, digitalSignal[bit]);
+    }
+}
+
+
+
